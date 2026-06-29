@@ -31,10 +31,31 @@ router.get('/archived', requireAuth, async (req, res) => {
   }
 });
 
+// Get specific note by ID without requiring auth (for testing/debugging)
+router.get('/test/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const note = await Note.findById(id);
+
+    if (!note) {
+      return res.status(404).json({ error: 'Note not found' });
+    }
+
+    res.json({ note });
+  } catch (error) {
+    console.error('Error fetching note:', error);
+    if (error.name === 'CastError' || error.kind === 'ObjectId') {
+      return res.status(400).json({ error: 'Invalid note id' });
+    }
+    res.status(500).json({ error: 'Error fetching note' });
+  }
+});
+
 // Get specific note by ID
 router.get('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    console.log(id)
     
     const note = await Note.findOne({ _id: id, user: req.userId });
 

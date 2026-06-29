@@ -69,6 +69,51 @@ describe('Notes Endpoints', () => {
     });
   });
 
+  describe('GET /api/notes/test/:id', () => {
+    it('should return a note by id without auth', async () => {
+      const mockNote = {
+        _id: 'note1',
+        title: 'Public Note',
+        content: 'Public Content',
+        user: mockUserId,
+        isArchived: false
+      };
+
+      Note.findById.mockResolvedValue(mockNote);
+
+      const response = await request(app)
+        .get('/api/notes/test/note1');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ note: mockNote });
+      expect(Note.findById).toHaveBeenCalledWith('note1');
+    });
+
+    it('should return 404 if the note does not exist', async () => {
+      Note.findById.mockResolvedValue(null);
+
+      const response = await request(app)
+        .get('/api/notes/test/nonexistent');
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'Note not found' });
+      expect(Note.findById).toHaveBeenCalledWith('nonexistent');
+    });
+
+    it('should return 400 for invalid note id', async () => {
+      const error = new Error('Cast to ObjectId failed');
+      error.name = 'CastError';
+      Note.findById.mockRejectedValue(error);
+
+      const response = await request(app)
+        .get('/api/notes/test/invalid-id');
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Invalid note id' });
+      expect(Note.findById).toHaveBeenCalledWith('invalid-id');
+    });
+  });
+
   describe('POST /api/notes', () => {
     it('should create a new note', async () => {
       const newNote = {
